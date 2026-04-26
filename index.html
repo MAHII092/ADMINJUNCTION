@@ -75,7 +75,6 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
-      border: 1px solid rgba(255,255,255,0.2);
     }
 
     .logout {
@@ -94,7 +93,6 @@
       background: rgba(255,255,255,0.14);
       padding: 18px;
       border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.2);
     }
 
     .grid {
@@ -107,7 +105,6 @@
       background: rgba(255,255,255,0.14);
       padding: 18px;
       border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.2);
       box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     }
 
@@ -177,115 +174,129 @@
 </div>
 
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbyL0c8vfSc75bSn7RefbMg5BtE76RXHKhFXMe_hyFrdxEK0R67MY7w0AL7gaW_t58tB/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyL0c8vfSc75bSn7RefbMg5BtE76RXHKhFXMe_hyFrdxEK0R67MY7w0AL7gaW_t58tB/exec";
 
-  let currentUser = null;
-  let allClients = [];
+let currentUser = null;
+let allClients = [];
 
-  function login() {
-    const userId = document.getElementById("userId").value.trim();
-    const password = document.getElementById("password").value.trim();
+function callAPI(params, callback) {
+  const cbName = "cb_" + Date.now();
 
-    document.getElementById("msg").innerText = "Checking...";
+  window[cbName] = function(data) {
+    callback(data);
+    delete window[cbName];
+    script.remove();
+  };
 
-    fetch(`${API_URL}?action=login&userId=${userId}&password=${password}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          currentUser = data.user;
-          localStorage.setItem("adminUser", JSON.stringify(currentUser));
-          showDashboard();
-          loadClients();
-        } else {
-          document.getElementById("msg").innerText = data.message;
-        }
-      })
-      .catch(() => {
-        document.getElementById("msg").innerText = "API error. Check Apps Script link.";
-      });
-  }
+  const query = new URLSearchParams(params).toString();
+  const script = document.createElement("script");
+  script.src = API_URL + "?" + query + "&callback=" + cbName;
 
-  function showDashboard() {
-    document.getElementById("loginPage").classList.add("hidden");
-    document.getElementById("dashboard").classList.remove("hidden");
+  document.body.appendChild(script);
+}
 
-    document.getElementById("welcome").innerText =
-      "Welcome, " + currentUser.name + " | Role: " + currentUser.role;
-  }
+function login() {
+  const userId = document.getElementById("userId").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-  function loadClients() {
-    fetch(`${API_URL}?action=clients&userId=${currentUser.userId}&role=${currentUser.role}`)
-      .then(res => res.json())
-      .then(data => {
-        allClients = data.clients || [];
-        renderClients(allClients);
-        updateStats(allClients);
-      })
-      .catch(() => {
-        document.getElementById("clients").innerHTML = "Unable to load clients.";
-      });
-  }
+  document.getElementById("msg").innerText = "Checking...";
 
-  function renderClients(list) {
-    let html = "";
-
-    if (list.length === 0) {
-      html = "<p>No clients found.</p>";
-    }
-
-    list.forEach(c => {
-      html += `
-        <div class="client-card">
-          <h3>${c.ClientName || ""}</h3>
-          <p><b>Mobile:</b> ${c.Mobile || ""}</p>
-          <p><b>Service:</b> ${c.Service || ""}</p>
-          <p><b>Assigned:</b> ${c.AssignedUser || ""}</p>
-          <p><b>Date:</b> ${c.Date || ""}</p>
-          <span class="badge">${c.Status || ""}</span>
-        </div>
-      `;
-    });
-
-    document.getElementById("clients").innerHTML = html;
-  }
-
-  function updateStats(list) {
-    document.getElementById("totalCount").innerText = list.length;
-
-    document.getElementById("activeCount").innerText =
-      list.filter(c => String(c.Status).toLowerCase() === "active").length;
-
-    document.getElementById("pendingCount").innerText =
-      list.filter(c => String(c.Status).toLowerCase() === "pending").length;
-  }
-
-  function searchClients() {
-    const q = document.getElementById("searchBox").value.toLowerCase();
-
-    const filtered = allClients.filter(c =>
-      String(c.ClientName).toLowerCase().includes(q) ||
-      String(c.Mobile).toLowerCase().includes(q) ||
-      String(c.Service).toLowerCase().includes(q)
-    );
-
-    renderClients(filtered);
-    updateStats(filtered);
-  }
-
-  function logout() {
-    localStorage.removeItem("adminUser");
-    location.reload();
-  }
-
-  window.onload = function() {
-    const saved = localStorage.getItem("adminUser");
-
-    if (saved) {
-      currentUser = JSON.parse(saved);
+  callAPI({
+    action: "login",
+    userId: userId,
+    password: password
+  }, function(data) {
+    if (data.success) {
+      currentUser = data.user;
+      localStorage.setItem("adminUser", JSON.stringify(currentUser));
       showDashboard();
       loadClients();
+    } else {
+      document.getElementById("msg").innerText = data.message;
     }
-  };
+  });
+}
+
+function showDashboard() {
+  document.getElementById("loginPage").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+
+  document.getElementById("welcome").innerText =
+    "Welcome, " + currentUser.name + " | Role: " + currentUser.role;
+}
+
+function loadClients() {
+  callAPI({
+    action: "clients",
+    userId: currentUser.userId,
+    role: currentUser.role
+  }, function(data) {
+    allClients = data.clients || [];
+    renderClients(allClients);
+    updateStats(allClients);
+  });
+}
+
+function renderClients(list) {
+  let html = "";
+
+  if (list.length === 0) {
+    html = "<p>No clients found.</p>";
+  }
+
+  list.forEach(c => {
+    html += `
+      <div class="client-card">
+        <h3>${c.ClientName || ""}</h3>
+        <p><b>Mobile:</b> ${c.Mobile || ""}</p>
+        <p><b>Service:</b> ${c.Service || ""}</p>
+        <p><b>Assigned:</b> ${c.AssignedUser || ""}</p>
+        <p><b>Date:</b> ${c.Date || ""}</p>
+        <span class="badge">${c.Status || ""}</span>
+      </div>
+    `;
+  });
+
+  document.getElementById("clients").innerHTML = html;
+}
+
+function updateStats(list) {
+  document.getElementById("totalCount").innerText = list.length;
+
+  document.getElementById("activeCount").innerText =
+    list.filter(c => String(c.Status).toLowerCase() === "active").length;
+
+  document.getElementById("pendingCount").innerText =
+    list.filter(c => String(c.Status).toLowerCase() === "pending").length;
+}
+
+function searchClients() {
+  const q = document.getElementById("searchBox").value.toLowerCase();
+
+  const filtered = allClients.filter(c =>
+    String(c.ClientName).toLowerCase().includes(q) ||
+    String(c.Mobile).toLowerCase().includes(q) ||
+    String(c.Service).toLowerCase().includes(q)
+  );
+
+  renderClients(filtered);
+  updateStats(filtered);
+}
+
+function logout() {
+  localStorage.removeItem("adminUser");
+  location.reload();
+}
+
+window.onload = function() {
+  const saved = localStorage.getItem("adminUser");
+
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    showDashboard();
+    loadClients();
+  }
+};
 </script>
 
 </body>
