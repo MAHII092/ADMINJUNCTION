@@ -6,125 +6,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #0f172a, #2563eb);
-      color: white;
-    }
-
-    .center {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .card {
-      width: 100%;
-      max-width: 420px;
-      padding: 25px;
-      border-radius: 24px;
-      background: rgba(255,255,255,0.14);
-      backdrop-filter: blur(18px);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.25);
-    }
-
-    h1, h2, h3 {
-      margin-top: 0;
-    }
-
-    input, button {
-      width: 100%;
-      padding: 14px;
-      margin: 8px 0;
-      border-radius: 14px;
-      border: none;
-      font-size: 15px;
-    }
-
-    input {
-      color: #111827;
-    }
-
-    button {
-      background: #22c55e;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .dashboard {
-      max-width: 1100px;
-      margin: auto;
-      padding: 20px;
-    }
-
-    .topbar {
-      background: rgba(255,255,255,0.14);
-      padding: 18px;
-      border-radius: 22px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .logout {
-      max-width: 110px;
-      background: #ef4444;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    .stat {
-      background: rgba(255,255,255,0.14);
-      padding: 18px;
-      border-radius: 20px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 15px;
-    }
-
-    .client-card {
-      background: rgba(255,255,255,0.14);
-      padding: 18px;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-
-    .badge {
-      display: inline-block;
-      background: #3b82f6;
-      padding: 6px 11px;
-      border-radius: 999px;
-      font-size: 12px;
-      margin-top: 8px;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .small {
-      opacity: 0.85;
-      font-size: 13px;
-    }
+    *{box-sizing:border-box;font-family:Arial,sans-serif}
+    body{margin:0;min-height:100vh;background:linear-gradient(135deg,#0f172a,#2563eb);color:white}
+    .center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .card,.box,.topbar,.stat,.client-card{background:rgba(255,255,255,.14);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.22);box-shadow:0 14px 35px rgba(0,0,0,.25)}
+    .card{width:100%;max-width:430px;padding:25px;border-radius:24px}
+    h1,h2,h3{margin-top:0}
+    input,select,button{width:100%;padding:14px;margin:8px 0;border-radius:14px;border:none;font-size:15px}
+    input,select{color:#111827}
+    button{background:#22c55e;color:white;font-weight:bold;cursor:pointer}
+    .dashboard{max-width:1150px;margin:auto;padding:20px}
+    .topbar{padding:18px;border-radius:22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+    .logout{max-width:110px;background:#ef4444}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;margin-bottom:20px}
+    .stat{padding:18px;border-radius:20px}
+    .box{padding:18px;border-radius:22px;margin-bottom:20px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:15px}
+    .client-card{padding:18px;border-radius:20px}
+    .badge{display:inline-block;background:#3b82f6;padding:6px 11px;border-radius:999px;font-size:12px;margin-top:8px}
+    .hidden{display:none}
+    .small{opacity:.85;font-size:13px}
   </style>
 </head>
 
@@ -165,6 +66,25 @@
       <h3 id="pendingCount">0</h3>
       <p>Pending</p>
     </div>
+    <div class="stat">
+      <h3 id="completedCount">0</h3>
+      <p>Completed</p>
+    </div>
+  </div>
+
+  <div id="addClientBox" class="box hidden">
+    <h3>Add New Client</h3>
+    <input id="clientName" placeholder="Client Name">
+    <input id="mobile" placeholder="Mobile Number">
+    <input id="service" placeholder="Service / Work">
+    <select id="status">
+      <option>Pending</option>
+      <option>Active</option>
+      <option>Completed</option>
+    </select>
+    <input id="assignedUser" placeholder="Assign User ID e.g. client1">
+    <button onclick="addClient()">Add Client</button>
+    <p id="addMsg"></p>
   </div>
 
   <input id="searchBox" placeholder="Search client..." onkeyup="searchClients()">
@@ -181,6 +101,7 @@ let allClients = [];
 
 function callAPI(params, callback) {
   const cbName = "cb_" + Date.now();
+  const script = document.createElement("script");
 
   window[cbName] = function(data) {
     callback(data);
@@ -189,9 +110,7 @@ function callAPI(params, callback) {
   };
 
   const query = new URLSearchParams(params).toString();
-  const script = document.createElement("script");
   script.src = API_URL + "?" + query + "&callback=" + cbName;
-
   document.body.appendChild(script);
 }
 
@@ -201,11 +120,7 @@ function login() {
 
   document.getElementById("msg").innerText = "Checking...";
 
-  callAPI({
-    action: "login",
-    userId: userId,
-    password: password
-  }, function(data) {
+  callAPI({action:"login",userId:userId,password:password}, function(data) {
     if (data.success) {
       currentUser = data.user;
       localStorage.setItem("adminUser", JSON.stringify(currentUser));
@@ -220,20 +135,52 @@ function login() {
 function showDashboard() {
   document.getElementById("loginPage").classList.add("hidden");
   document.getElementById("dashboard").classList.remove("hidden");
-
   document.getElementById("welcome").innerText =
     "Welcome, " + currentUser.name + " | Role: " + currentUser.role;
+
+  if (currentUser.role === "admin") {
+    document.getElementById("addClientBox").classList.remove("hidden");
+  }
 }
 
 function loadClients() {
   callAPI({
-    action: "clients",
-    userId: currentUser.userId,
-    role: currentUser.role
+    action:"clients",
+    userId:currentUser.userId,
+    role:currentUser.role
   }, function(data) {
     allClients = data.clients || [];
     renderClients(allClients);
     updateStats(allClients);
+  });
+}
+
+function addClient() {
+  const clientName = document.getElementById("clientName").value.trim();
+  const mobile = document.getElementById("mobile").value.trim();
+  const service = document.getElementById("service").value.trim();
+  const status = document.getElementById("status").value.trim();
+  const assignedUser = document.getElementById("assignedUser").value.trim();
+
+  document.getElementById("addMsg").innerText = "Adding client...";
+
+  callAPI({
+    action:"addClient",
+    clientName:clientName,
+    mobile:mobile,
+    service:service,
+    status:status,
+    assignedUser:assignedUser
+  }, function(data) {
+    document.getElementById("addMsg").innerText = data.message;
+
+    if (data.success) {
+      document.getElementById("clientName").value = "";
+      document.getElementById("mobile").value = "";
+      document.getElementById("service").value = "";
+      document.getElementById("assignedUser").value = "";
+      loadClients();
+    }
   });
 }
 
@@ -248,6 +195,7 @@ function renderClients(list) {
     html += `
       <div class="client-card">
         <h3>${c.ClientName || ""}</h3>
+        <p><b>Client ID:</b> ${c.ClientID || ""}</p>
         <p><b>Mobile:</b> ${c.Mobile || ""}</p>
         <p><b>Service:</b> ${c.Service || ""}</p>
         <p><b>Assigned:</b> ${c.AssignedUser || ""}</p>
@@ -262,12 +210,12 @@ function renderClients(list) {
 
 function updateStats(list) {
   document.getElementById("totalCount").innerText = list.length;
-
   document.getElementById("activeCount").innerText =
     list.filter(c => String(c.Status).toLowerCase() === "active").length;
-
   document.getElementById("pendingCount").innerText =
     list.filter(c => String(c.Status).toLowerCase() === "pending").length;
+  document.getElementById("completedCount").innerText =
+    list.filter(c => String(c.Status).toLowerCase() === "completed").length;
 }
 
 function searchClients() {
@@ -276,7 +224,8 @@ function searchClients() {
   const filtered = allClients.filter(c =>
     String(c.ClientName).toLowerCase().includes(q) ||
     String(c.Mobile).toLowerCase().includes(q) ||
-    String(c.Service).toLowerCase().includes(q)
+    String(c.Service).toLowerCase().includes(q) ||
+    String(c.AssignedUser).toLowerCase().includes(q)
   );
 
   renderClients(filtered);
@@ -290,7 +239,6 @@ function logout() {
 
 window.onload = function() {
   const saved = localStorage.getItem("adminUser");
-
   if (saved) {
     currentUser = JSON.parse(saved);
     showDashboard();
